@@ -1,7 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { Pool } from 'pg';
+import pkg from 'pg';
+const { Pool } = pkg;
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
@@ -15,12 +16,18 @@ dotenv.config();
 const app = express();
 const PORT = process.env.SERVER_PORT || process.env.PORT || 3001;
 
+// Get the frontend URL from environment variables
+const frontendUrl = process.env.FRONTEND_URL || 'https://captttttttttttttttttttttttttttttttt.onrender.com';
+
 // Set up __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: frontendUrl,
+  credentials: true
+}));
 app.use(express.json());
 
 // Initialize PostgreSQL connection pool

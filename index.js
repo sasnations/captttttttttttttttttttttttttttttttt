@@ -6,6 +6,7 @@ import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 // Load environment variables
 dotenv.config();
@@ -13,6 +14,10 @@ dotenv.config();
 // Initialize Express app
 const app = express();
 const PORT = process.env.SERVER_PORT || process.env.PORT || 3001;
+
+// Set up __dirname equivalent for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Middleware
 app.use(cors());
@@ -32,12 +37,6 @@ pool.query('SELECT NOW()', (err, res) => {
     console.log('Database connected:', res.rows[0].now);
   }
 });
-
-// Serve static frontend files in production
-if (process.env.NODE_ENV === 'production') {
-  const __dirname = path.resolve();
-  app.use(express.static(path.join(__dirname, 'dist')));
-}
 
 // Authentication middleware
 const authenticateToken = (req, res, next) => {
@@ -565,13 +564,6 @@ app.get('/api/challenge-content', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch challenge content' });
   }
 });
-
-// Handle React routing in production
-if (process.env.NODE_ENV === 'production') {
-  app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
-  });
-}
 
 // Start the server
 const server = app.listen(PORT, () => {

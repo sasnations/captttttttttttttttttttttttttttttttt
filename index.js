@@ -23,6 +23,33 @@ const frontendUrl = process.env.FRONTEND_URL || 'https://captttttttttttttttttttt
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Logging utility
+const logger = {
+  info: (message, meta = {}) => {
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] [INFO] ${message}`, meta);
+  },
+  error: (message, error) => {
+    const timestamp = new Date().toISOString();
+    console.error(`[${timestamp}] [ERROR] ${message}`, error);
+  },
+  warn: (message, meta = {}) => {
+    const timestamp = new Date().toISOString();
+    console.warn(`[${timestamp}] [WARN] ${message}`, meta);
+  },
+  debug: (message, meta = {}) => {
+    if (process.env.NODE_ENV !== 'production') {
+      const timestamp = new Date().toISOString();
+      console.log(`[${timestamp}] [DEBUG] ${message}`, meta);
+    }
+  }
+};
+
+// Log environment information
+logger.info('Server initialization started');
+logger.info(`NODE_ENV: ${process.env.NODE_ENV || 'development'}`);
+logger.info(`Frontend URL configured as: ${frontendUrl}`);
+
 // Middleware
 app.use(cors({
   origin: frontendUrl,
@@ -30,7 +57,19 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// Log middleware setup
+logger.info('Middleware configured', { 
+  cors: true, 
+  jsonParser: true
+});
+
 // Initialize PostgreSQL connection pool
+logger.info('Initializing database connection pool');
+logger.info('Database configuration:', { 
+  ssl: process.env.DATABASE_SSL === 'true' ? 'enabled' : 'disabled',
+  url: process.env.DATABASE_URL ? `${process.env.DATABASE_URL.split('@')[0].split(':')[0]}:****@${process.env.DATABASE_URL.split('@')[1]}` : 'not provided'
+});
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : false
@@ -39,9 +78,25 @@ const pool = new Pool({
 // Test database connection
 pool.query('SELECT NOW()', (err, res) => {
   if (err) {
-    console.error('Database connection error:', err.stack);
+    logger.error('Database connection failed', err.stack);
   } else {
-    console.log('Database connected:', res.rows[0].now);
+    logger.info(`Database connected successfully at ${res.rows[0].now}`);
+    
+    // Test database tables existence
+    pool.query(`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema='public' 
+      ORDER BY table_name;
+    `)
+    .then(result => {
+      logger.info(`Database tables found: ${result.rows.length}`, {
+        tables: result.rows.map(row => row.table_name)
+      });
+    })
+    .catch(error => {
+      logger.error('Error checking database tables', error);
+    });
   }
 });
 
@@ -85,10 +140,13 @@ const authenticateApiKey = async (req, res, next) => {
     req.client = client;
     next();
   } catch (err) {
-    console.error('API key authentication error:', err);
+    logger.error('API key authentication error', err);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+// Log middleware setup
+logger.info('Authentication middleware configured');
 
 // Auth routes for custom authentication
 app.post('/api/auth/register', async (req, res) => {
@@ -130,12 +188,14 @@ app.post('/api/auth/register', async (req, res) => {
     // Generate token
     const token = jwt.sign({ id: userId, email }, process.env.JWT_SECRET, { expiresIn: '7d' });
     
+    logger.info('New user registered', { userId, email });
+    
     res.status(201).json({
       user: result.rows[0],
       token
     });
   } catch (err) {
-    console.error('Registration error:', err);
+    logger.error('Registration error', err);
     res.status(500).json({ error: 'Failed to register user' });
   }
 });
@@ -162,11 +222,14 @@ app.post('/api/auth/login', async (req, res) => {
     // Verify password
     const hash = crypto.pbkdf2Sync(password, user.password_salt, 1000, 64, 'sha512').toString('hex');
     if (hash !== user.password_hash) {
+      logger.warn('Failed login attempt', { email });
       return res.status(401).json({ error: 'Invalid credentials' });
     }
     
     // Generate token
     const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    
+    logger.info('User logged in', { userId: user.id, email });
     
     res.status(200).json({
       user: {
@@ -177,13 +240,22 @@ app.post('/api/auth/login', async (req, res) => {
       token
     });
   } catch (err) {
-    console.error('Login error:', err);
+    logger.error('Login error', err);
     res.status(500).json({ error: 'Failed to authenticate user' });
   }
 });
 
 app.get('/api/user', authenticateToken, (req, res) => {
   res.status(200).json({ user: req.user });
+});
+
+// Log available routes
+logger.info('API auth routes configured', { 
+  routes: [
+    { path: '/api/auth/register', method: 'POST' },
+    { path: '/api/auth/login', method: 'POST' },
+    { path: '/api/user', method: 'GET' }
+  ]
 });
 
 // Routes
@@ -202,7 +274,7 @@ app.get('/api/categories', async (req, res) => {
     
     res.status(200).json(result.rows);
   } catch (err) {
-    console.error('Error fetching categories:', err);
+    logger.error('Error fetching categories', err);
     res.status(500).json({ error: 'Failed to fetch categories' });
   }
 });
@@ -226,7 +298,7 @@ app.get('/api/captchas', async (req, res) => {
     
     res.status(200).json(data);
   } catch (err) {
-    console.error('Error fetching captchas:', err);
+    logger.error('Error fetching captchas', err);
     res.status(500).json({ error: 'Failed to fetch captchas' });
   }
 });
@@ -245,9 +317,10 @@ app.post('/api/categories', authenticateToken, async (req, res) => {
       [name, description]
     );
     
+    logger.info('New category created', { name, categoryId: result.rows[0].id });
     res.status(201).json(result.rows[0]);
   } catch (err) {
-    console.error('Error creating category:', err);
+    logger.error('Error creating category', err);
     res.status(500).json({ error: 'Failed to create category' });
   }
 });
@@ -266,9 +339,10 @@ app.post('/api/captchas', authenticateToken, async (req, res) => {
       [name, category_id, description, difficulty]
     );
     
+    logger.info('New CAPTCHA created', { name, captchaId: result.rows[0].id });
     res.status(201).json(result.rows[0]);
   } catch (err) {
-    console.error('Error creating captcha:', err);
+    logger.error('Error creating captcha', err);
     res.status(500).json({ error: 'Failed to create captcha' });
   }
 });
@@ -299,13 +373,19 @@ app.post('/api/verify', authenticateApiKey, async (req, res) => {
       ]
     );
     
+    logger.info('CAPTCHA verification processed', { 
+      clientId: client.id, 
+      captchaId: captcha_id, 
+      riskScore: risk_score 
+    });
+    
     res.status(200).json({ 
       success: true, 
       message: 'Verification successful',
       client_id: client.id
     });
   } catch (err) {
-    console.error('Error processing verification:', err);
+    logger.error('Error processing verification', err);
     res.status(500).json({ error: 'Failed to process verification' });
   }
 });
@@ -335,7 +415,7 @@ app.get('/api/client/settings', authenticateToken, async (req, res) => {
       res.status(200).json(settingsResult.rows[0]);
     }
   } catch (err) {
-    console.error('Error fetching client settings:', err);
+    logger.error('Error fetching client settings', err);
     res.status(500).json({ error: 'Failed to fetch client settings' });
   }
 });
@@ -385,6 +465,7 @@ app.put('/api/client/settings', authenticateToken, async (req, res) => {
       );
       
       result = updateResult.rows[0];
+      logger.info('Client settings updated', { clientId: client.id });
     } else {
       // Create new settings
       const insertResult = await pool.query(
@@ -402,11 +483,12 @@ app.put('/api/client/settings', authenticateToken, async (req, res) => {
       );
       
       result = insertResult.rows[0];
+      logger.info('Initial client settings created', { clientId: client.id });
     }
     
     res.status(200).json(result);
   } catch (err) {
-    console.error('Error updating client settings:', err);
+    logger.error('Error updating client settings', err);
     res.status(500).json({ error: 'Failed to update client settings' });
   }
 });
@@ -471,7 +553,7 @@ app.get('/api/analytics', authenticateToken, async (req, res) => {
       chartData
     });
   } catch (err) {
-    console.error('Error fetching analytics:', err);
+    logger.error('Error fetching analytics', err);
     res.status(500).json({ error: 'Failed to fetch analytics' });
   }
 });
@@ -501,6 +583,7 @@ app.post('/api/client/api-key', authenticateToken, async (req, res) => {
       );
       
       result = updateResult.rows[0];
+      logger.info('API key regenerated', { clientId: result.id });
     } else {
       // Create new client
       const { company_name = 'My Company' } = req.body;
@@ -514,11 +597,12 @@ app.post('/api/client/api-key', authenticateToken, async (req, res) => {
       );
       
       result = insertResult.rows[0];
+      logger.info('New client created with API key', { clientId: result.id });
     }
     
     res.status(200).json({ api_key: result.api_key });
   } catch (err) {
-    console.error('Error generating API key:', err);
+    logger.error('Error generating API key', err);
     res.status(500).json({ error: 'Failed to generate API key' });
   }
 });
@@ -540,9 +624,14 @@ app.post('/api/challenge-content', authenticateToken, async (req, res) => {
       [challenge_type, content_data, metadata || {}, req.user.id]
     );
     
+    logger.info('New challenge content created', { 
+      challengeType: challenge_type, 
+      contentId: result.rows[0].id 
+    });
+    
     res.status(201).json(result.rows[0]);
   } catch (err) {
-    console.error('Error uploading challenge content:', err);
+    logger.error('Error uploading challenge content', err);
     res.status(500).json({ error: 'Failed to upload challenge content' });
   }
 });
@@ -567,28 +656,69 @@ app.get('/api/challenge-content', async (req, res) => {
     
     res.status(200).json(result.rows);
   } catch (err) {
-    console.error('Error fetching challenge content:', err);
+    logger.error('Error fetching challenge content', err);
     res.status(500).json({ error: 'Failed to fetch challenge content' });
   }
 });
 
+// Log configured routes
+logger.info('API routes configured', {
+  routes: [
+    { path: '/api/health', method: 'GET' },
+    { path: '/api/categories', method: 'GET' },
+    { path: '/api/categories', method: 'POST' },
+    { path: '/api/captchas', method: 'GET' },
+    { path: '/api/captchas', method: 'POST' },
+    { path: '/api/verify', method: 'POST' },
+    { path: '/api/client/settings', method: 'GET' },
+    { path: '/api/client/settings', method: 'PUT' },
+    { path: '/api/analytics', method: 'GET' },
+    { path: '/api/client/api-key', method: 'POST' },
+    { path: '/api/challenge-content', method: 'POST' },
+    { path: '/api/challenge-content', method: 'GET' }
+  ]
+});
+
 // Start the server
 const server = app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  logger.info(`Server running on port ${PORT}`);
+  logger.info(`Server process ID: ${process.pid}`);
+  logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  logger.info(`Memory usage: ${JSON.stringify(process.memoryUsage())}`);
   
   // For Render.com health checks
   if (process.env.RENDER_EXTERNAL_URL) {
-    console.log(`External URL: ${process.env.RENDER_EXTERNAL_URL}`);
+    logger.info(`External URL: ${process.env.RENDER_EXTERNAL_URL}`);
   }
+  
+  // Print server startup summary
+  logger.info('=================================================================');
+  logger.info('                 CAPTCHA SHIELD SERVER STARTED                   ');
+  logger.info('=================================================================');
+  logger.info(`Server time: ${new Date().toISOString()}`);
+  logger.info(`Node.js version: ${process.version}`);
+  logger.info(`Platform: ${process.platform} ${process.arch}`);
+  logger.info('Health check endpoint: /api/health');
+  logger.info('=================================================================');
 });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
-  console.log('SIGTERM signal received: closing HTTP server');
+  logger.info('SIGTERM signal received: closing HTTP server');
   server.close(() => {
-    console.log('HTTP server closed');
+    logger.info('HTTP server closed');
     pool.end();
+    logger.info('Database connection pool closed');
   });
+});
+
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught exception', error);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
 export default app;

@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CAPTCHA Dashboard</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+    }
+    h1, h2, h3 {
+      color: #4f46e5;
+    }
+    .card {
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid #e5e7eb;
+      margin-bottom: 20px;
+    }
+    .tab {
+      padding: 10px 20px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+    }
+    .tab.active {
+      border-bottom: 2px solid #4f46e5;
+      color: #4f46e5;
+      font-weight: 500;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    input[type="text"],
+    textarea,
+    select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    textarea {
+      min-height: 100px;
+    }
+    .btn {
+      background-color: #4f46e5;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .btn:hover {
+      background-color: #4338ca;
+    }
+    .btn-secondary {
+      background-color: #e5e7eb;
+      color: #374151;
+    }
+    .btn-secondary:hover {
+      background-color: #d1d5db;
+    }
+    .btn-danger {
+      background-color: #ef4444;
+      color: white;
+    }
+    .btn-danger:hover {
+      background-color: #dc2626;
+    }
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 10px;
+    }
+    .image-container {
+      position: relative;
+      aspect-ratio: 1;
+      border: 2px solid #e5e7eb;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .image-container.selected {
+      border-color: #4f46e5;
+    }
+    .image-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .image-container .overlay {
+      position: absolute;
+      top: 0;
+      right: 0;
+      background-color: #4f46e5;
+      color: white;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+    }
+    .challenge-list {
+      margin-top: 20px;
+    }
+    .challenge-item {
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      padding: 15px;
+      margin-bottom: 10px;
+    }
+    .challenge-item h3 {
+      margin-top: 0;
+      font-size: 18px;
+    }
+    .challenge-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .badge-success {
+      background-color: #d1fae5;
+      color: #047857;
+    }
+    .badge-warning {
+      background-color: #fef3c7;
+      color: #92400e;
+    }
+    .badge-danger {
+      background-color: #fee2e2;
+      color: #b91c1c;
+    }
+    .code-block {
+      background-color: #f3f4f6;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-family: monospace;
+    }
+    .alert {
+      padding: 15px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+    .alert-success {
+      background-color: #d1fae5;
+      border-left: 4px solid #10b981;
+      color: #047857;
+    }
+    .alert-warning {
+      background-color: #fef3c7;
+      border-left: 4px solid #f59e0b;
+      color: #92400e;
+    }
+    .alert-danger {
+      background-color: #fee2e2;
+      border-left: 4px solid #ef4444;
+      color: #b91c1c;
+    }
+    .challenge-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .action-btn {
+      font-size: 14px;
+      padding: 5px 10px;
+    }
+    .preview-section {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid #e5e7eb;
+    }
+    .pattern-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      width: 200px;
+      margin: 20px 0;
+    }
+    .pattern-dot {
+      aspect-ratio: 1;
+      background-color: #e5e7eb;
+      border-radius: 50%;
+    }
+    .pattern-dot.marked {
+      background-color: #4f46e5;
+    }
+    .difficulty-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-left: 10px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .difficulty-easy {
+      background-color: #d1fae5;
+      color: #047857;
+    }
+    .difficulty-medium {
+      background-color: #fef3c7;
+      color: #92400e;
+    }
+    .difficulty-hard {
+      background-color: #fee2e2;
+      color: #b91c1c;
+    }
+  </style>
+</head>
+<body>
+  <h1>CAPTCHA Challenge Management</h1>
+  
+  <div class="tabs">
+    <div class="tab active" data-tab="overview">Overview</div>
+    <div class="tab" data-tab="create">Create Challenge</div>
+    <div class="tab" data-tab="manage">Manage Challenges</div>
+    <div class="tab" data-tab="integration">Integration</div>
+  </div>
+  
+  <div id="overview" class="tab-content active">
+    <div class="card">
+      <h2>CAPTCHA Challenge Overview</h2>
+      <div id="challenge-stats">
+        <p>Loading statistics...</p>
+      </div>
+      
+      <div class="alert alert-warning">
+        <h3>Setup Guide</h3>
+        <p>Follow these steps to set up your CAPTCHA system:</p>
+        <ol>
+          <li>Create at least one challenge of each type (Text, Image Selection, Pattern, Semantic)</li>
+          <li>Ensure each challenge has a correct difficulty level set</li>
+          <li>Test your challenges using the test page</li>
+          <li>Integrate the CAPTCHA into your website using the code in the Integration tab</li>
+        </ol>
+      </div>
+      
+      <div class="form-group">
+        <label for="maintenance-action">Quick Maintenance</label>
+        <select id="maintenance-action" class="form-control">
+          <option value="">Select maintenance action...</option>
+          <option value="fix-types">Fix challenge types (image → image_selection)</option>
+          <option value="add-difficulty">Add missing difficulty metadata</option>
+          <option value="activate">Activate all inactive challenges</option>
+          <option value="fix-indices">Fix missing correctIndices in image challenges</option>
+          <option value="create-samples">Create sample challenges for all types</option>
+          <option value="fix-all">Fix all issues</option>
+        </select>
+      </div>
+      
+      <button id="run-maintenance" class="btn">Run Maintenance</button>
+      <div id="maintenance-result" class="alert" style="display: none;"></div>
+    </div>
+    
+    <div class="card">
+      <h2>Test Your CAPTCHAs</h2>
+      <p>Use the test page to verify that your CAPTCHA challenges are displaying correctly:</p>
+      <a href="/captcha-test.html" target="_blank" class="btn">Open Test Page</a>
+    </div>
+  </div>
+  
+  <div id="create" class="tab-content">
+    <div class="card">
+      <h2>Create New CAPTCHA Challenge</h2>
+      
+      <div class="form-group">
+        <label for="challenge-type">Challenge Type</label>
+        <select id="challenge-type" onchange="showChallengeForm()">
+          <option value="">Select challenge type...</option>
+          <option value="text">Text Recognition</option>
+          <option value="image_selection">Image Selection</option>
+          <option value="pattern">Pattern Memory</option>
+          <option value="semantic">Semantic Understanding</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="challenge-difficulty">Difficulty</label>
+        <select id="challenge-difficulty">
+          <option value="easy">Easy</option>
+          <option value="medium" selected>Medium</option>
+          <option value="hard">Hard</option>
+        </select>
+      </div>
+      
+      <!-- Text Challenge Form -->
+      <div id="text-form" class="challenge-form" style="display: none;">
+        <div class="form-group">
+          <label for="text-value">Text Value</label>
+          <input type="text" id="text-value" placeholder="Enter text for recognition (e.g., AB123C)" maxlength="8">
+          <p><small>Use letters and numbers. The text will be transformed with distortion effects.</small></p>
+        </div>
+        
+        <div class="form-group">
+          <label for="distortion-level">Distortion Level</label>
+          <select id="distortion-level">
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+      </div>
+      
+      <!-- Image Selection Challenge Form -->
+      <div id="image_selection-form" class="challenge-form" style="display: none;">
+        <div class="form-group">
+          <label for="category">Category Question</label>
+          <input type="text" id="category" placeholder="e.g., Select all images containing cats">
+        </div>
+        
+        <div class="form-group">
+          <label>Images</label>
+          <p><small>Add URLs of images (preferably from Unsplash). Use the checkboxes to mark correct images.</small></p>
+          
+          <div id="image-inputs">
+            <div class="form-group">
+              <input type="text" class="image-url" placeholder="Image URL">
+              <label><input type="checkbox" class="correct-image"> Correct image</label>
+            </div>
+            <div class="form-group">
+              <input type="text" class="image-url" placeholder="Image URL">
+              <label><input type="checkbox" class="correct-image"> Correct image</label>
+            </div>
+            <div class="form-group">
+              <input type="text" class="image-url" placeholder="Image URL">
+              <label><input type="checkbox" class="correct-image"> Correct image</label>
+            </div>
+            <div class="form-group">
+              <input type="text" class="image-url" placeholder="Image URL">
+              <label><input type="checkbox" class="correct-image"> Correct image</label>
+            </div>
+          </div>
+          
+          <button type="button" id="add-image" class="btn btn-secondary">+ Add Image</button>
+        </div>
+      </div>
+      
+      <!-- Pattern Challenge Form -->
+      <div id="pattern-form" class="challenge-form" style="display: none;">
+        <div class="form-group">
+          <label for="grid-size">Grid Size</label>
+          <select id="grid-size" onchange="updatePatternGrid()">
+            <option value="3">3×3</option>
+            <option value="4" selected>4×4</option>
+            <option value="5">5×5</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="pattern-length">Pattern Length</label>
+          <input type="number" id="pattern-length" value="5" min="3" max="9">
+        </div>
+        
+        <div class="form-group">
+          <label>Create Pattern</label>
+          <p><small>Click dots to create a pattern sequence. The sequence will be shown to users to memorize.</small></p>
+          <div id="pattern-grid" class="pattern-grid"></div>
+          <button type="button" id="reset-pattern" class="btn btn-secondary">Reset Pattern</button>
+        </div>
+      </div>
+      
+      <!-- Semantic Challenge Form -->
+      <div id="semantic-form" class="challenge-form" style="display: none;">
+        <div class="form-group">
+          <label for="question-text">Question</label>
+          <input type="text" id="question-text" placeholder="e.g., Which of these is a color?">
+        </div>
+        
+        <div class="form-group">
+          <label>Options</label>
+          <p><small>Add answer options. Mark the correct answer with the radio button.</small></p>
+          
+          <div id="option-inputs">
+            <div class="form-group">
+              <input type="text" class="option-text" placeholder="Option 1">
+              <label><input type="radio" name="correct-option" value="0" checked> Correct answer</label>
+            </div>
+            <div class="form-group">
+              <input type="text" class="option-text" placeholder="Option 2">
+              <label><input type="radio" name="correct-option" value="1"> Correct answer</label>
+            </div>
+            <div class="form-group">
+              <input type="text" class="option-text" placeholder="Option 3">
+              <label><input type="radio" name="correct-option" value="2"> Correct answer</label>
+            </div>
+          </div>
+          
+          <button type="button" id="add-option" class="btn btn-secondary">+ Add Option</button>
+        </div>
+      </div>
+      
+      <button id="create-challenge" class="btn">Create Challenge</button>
+      <div id="create-result"></div>
+    </div>
+  </div>
+  
+  <div id="manage" class="tab-content">
+    <div class="card">
+      <h2>Manage Existing Challenges</h2>
+      
+      <div class="form-group">
+        <label for="filter-type">Filter by Type</label>
+        <select id="filter-type">
+          <option value="">All types</option>
+          <option value="text">Text Recognition</option>
+          <option value="image_selection">Image Selection</option>
+          <option value="pattern">Pattern Memory</option>
+          <option value="semantic">Semantic Understanding</option>
+        </select>
+      </div>
+      
+      <div id="challenge-list" class="challenge-list">
+        <p>Loading challenges...</p>
+      </div>
+    </div>
+  </div>
+  
+  <div id="integration" class="tab-content">
+    <div class="card">
+      <h2>CAPTCHA Integration Guide</h2>
+      
+      <div class="form-group">
+        <label>Include the CAPTCHA Script</label>
+        <div class="code-block">
+&lt;script src="https://icaptcha.onrender.com/cdn/captcha.js" async&gt;&lt;/script&gt;
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>Basic Integration (Form with CAPTCHA)</label>
+        <div class="code-block">
+&lt;form id="myForm"&gt;
+  &lt;!-- Your form fields here --&gt;
+  
+  &lt;div id="captcha-container"&gt;&lt;/div&gt;
+  
+  &lt;button type="submit"&gt;Submit&lt;/button&gt;
+&lt;/form&gt;
+
+&lt;script&gt;
+  document.addEventListener('DOMContentLoaded', function() {
+    // Initialize with your API key
+    iCaptcha.init({
+      apiKey: 'your_api_key_here'
+    });
+    
+    // Render the CAPTCHA
+    iCaptcha.render('captcha-container', {
+      challengeType: 'image_selection',  // Options: text, image_selection, pattern, semantic
+      difficulty: 'medium'              // Options: easy, medium, hard
+    });
+    
+    // Handle form submission
+    document.getElementById('myForm').addEventListener('submit', function(event) {
+      event.preventDefault();
+      
+      iCaptcha.verify({
+        onSuccess: function(token) {
+          // Add token to form and submit
+          const hiddenInput = document.createElement('input');
+          hiddenInput.type = 'hidden';
+          hiddenInput.name = 'captcha_token';
+          hiddenInput.value = token;
+          document.getElementById('myForm').appendChild(hiddenInput);
+          
+          // Now you can submit the form
+          // document.getElementById('myForm').submit();
+          
+          // For demo purposes, just show success
+          alert('CAPTCHA verification successful!');
+        },
+        onFailure: function(error) {
+          alert('CAPTCHA verification failed: ' + error);
+        }
+      });
+    });
+  });
+&lt;/script&gt;
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>Advanced Options</label>
+        <div class="code-block">
+// Initialize with behavior analysis
+iCaptcha.init({
+  apiKey: 'your_api_key_here',
+  invisibleMode: true  // Enable background behavior analysis
+});
+
+// Get current risk score (0 = human, 1 = bot)
+const riskScore = iCaptcha.getRiskScore();
+console.log('Current risk score:', riskScore);
+
+// Reset a CAPTCHA
+iCaptcha.reset();
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>Server-Side Verification</label>
+        <p>When your form is submitted, verify the CAPTCHA token in your server:</p>
+        <div class="code-block">
+// Node.js example with Express
+app.post('/submit-form', async (req, res) => {
+  const captchaToken = req.body.captcha_token;
+  
+  if (!captchaToken) {
+    return res.status(400).json({ error: 'CAPTCHA verification required' });
+  }
+  
+  try {
+    const verificationResult = await fetch('https://icaptcha.onrender.com/api/captcha/verify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': 'your_api_key_here'
+      },
+      body: JSON.stringify({ token: captchaToken })
+    });
+    
+    const data = await verificationResult.json();
+    
+    if (data.success) {
+      // CAPTCHA is valid, process the form
+      return res.json({ success: true });
+    } else {
+      return res.status(400).json({ error: 'CAPTCHA verification failed' });
+    }
+  } catch (error) {
+    console.error('CAPTCHA verification error:', error);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // Tab switching
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        // Remove active class from all tabs and contents
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        
+        // Add active class to clicked tab and corresponding content
+        tab.classList.add('active');
+        const tabName = tab.getAttribute('data-tab');
+        document.getElementById(tabName).classList.add('active');
+      });
+    });
+    
+    // Challenge form management
+    function showChallengeForm() {
+      const type = document.getElementById('challenge-type').value;
+      
+      // Hide all forms
+      document.querySelectorAll('.challenge-form').forEach(form => {
+        form.style.display = 'none';
+      });
+      
+      // Show selected form
+      if (type) {
+        const form = document.getElementById(`${type}-form`);
+        if (form) {
+          form.style.display = 'block';
+        }
+      }
+      
+      // Initialize pattern grid if needed
+      if (type === 'pattern') {
+        updatePatternGrid();
+      }
+    }
+    
+    // Pattern grid management
+    let patternSequence = [];
+    
+    function updatePatternGrid() {
+      const gridSize = parseInt(document.getElementById('grid-size').value);
+      const patternGrid = document.getElementById('pattern-grid');
+      
+      // Reset pattern sequence
+      patternSequence = [];
+      
+      // Clear existing grid
+      patternGrid.innerHTML = '';
+      
+      // Set grid template
+      patternGrid.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+      
+      // Add dots
+      for (let i = 0; i < gridSize * gridSize; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'pattern-dot';
+        dot.setAttribute('data-index', i);
+        
+        dot.addEventListener('click', () => {
+          // Add to sequence if not already added
+          if (!patternSequence.includes(i)) {
+            patternSequence.push(i);
+            dot.classList.add('marked');
+            dot.textContent = patternSequence.length;
+          }
+        });
+        
+        patternGrid.appendChild(dot);
+      }
+    }
+    
+    // Reset pattern
+    document.getElementById('reset-pattern').addEventListener('click', () => {
+      patternSequence = [];
+      document.querySelectorAll('.pattern-dot').forEach(dot => {
+        dot.classList.remove('marked');
+        dot.textContent = '';
+      });
+    });
+    
+    // Add image input
+    document.getElementById('add-image').addEventListener('click', () => {
+      const imageInputs = document.getElementById('image-inputs');
+      const newInput = document.createElement('div');
+      newInput.className = 'form-group';
+      newInput.innerHTML = `
+        <input type="text" class="image-url" placeholder="Image URL">
+        <label><input type="checkbox" class="correct-image"> Correct image</label>
+      `;
+      imageInputs.appendChild(newInput);
+    });
+    
+    // Add option input
+    document.getElementById('add-option').addEventListener('click', () => {
+      const optionInputs = document.getElementById('option-inputs');
+      const newInput = document.createElement('div');
+      newInput.className = 'form-group';
+      const optionIndex = optionInputs.children.length;
+      newInput.innerHTML = `
+        <input type="text" class="option-text" placeholder="Option ${optionIndex + 1}">
+        <label><input type="radio" name="correct-option" value="${optionIndex}"> Correct answer</label>
+      `;
+      optionInputs.appendChild(newInput);
+    });
+    
+    // Create challenge
+    document.getElementById('create-challenge').addEventListener('click', () => {
+      const type = document.getElementById('challenge-type').value;
+      if (!type) {
+        alert('Please select a challenge type');
+        return;
+      }
+      
+      const difficulty = document.getElementById('challenge-difficulty').value;
+      let contentData, metadata;
+      
+      // Build challenge data based on type
+      switch (type) {
+        case 'text':
+          const text = document.getElementById('text-value').value;
+          const distortionLevel = document.getElementById('distortion-level').value;
+          
+          if (!text) {
+            alert('Please enter text for the challenge');
+            return;
+          }
+          
+          contentData = { text, distortionLevel };
+          break;
+          
+        case 'image_selection':
+          const category = document.getElementById('category').value;
+          const imageUrls = Array.from(document.querySelectorAll('.image-url'))
+            .map(input => input.value)
+            .filter(url => url.trim() !== '');
+          
+          const correctIndices = [];
+          Array.from(document.querySelectorAll('.correct-image')).forEach((checkbox, index) => {
+            if (checkbox.checked && document.querySelectorAll('.image-url')[index].value.trim() !== '') {
+              correctIndices.push(index);
+            }
+          });
+          
+          if (!category) {
+            alert('Please enter a category question');
+            return;
+          }
+          
+          if (imageUrls.length < 4) {
+            alert('Please add at least 4 image URLs');
+            return;
+          }
+          
+          if (correctIndices.length === 0) {
+            alert('Please mark at least one correct image');
+            return;
+          }
+          
+          contentData = { category, images: imageUrls, correctIndices };
+          break;
+          
+        case 'pattern':
+          const gridSize = parseInt(document.getElementById('grid-size').value);
+          const patternLength = parseInt(document.getElementById('pattern-length').value);
+          
+          if (patternSequence.length < 3) {
+            alert('Please create a pattern with at least 3 dots');
+            return;
+          }
+          
+          contentData = { gridSize, patternLength, pattern: patternSequence };
+          break;
+          
+        case 'semantic':
+          const question = document.getElementById('question-text').value;
+          const options = Array.from(document.querySelectorAll('.option-text'))
+            .map(input => input.value)
+            .filter(text => text.trim() !== '');
+          
+          const correctOptionEl = document.querySelector('input[name="correct-option"]:checked');
+          const correctIndex = correctOptionEl ? parseInt(correctOptionEl.value) : 0;
+          
+          if (!question) {
+            alert('Please enter a question');
+            return;
+          }
+          
+          if (options.length < 2) {
+            alert('Please add at least 2 options');
+            return;
+          }
+          
+          contentData = { question, options, correctIndex };
+          break;
+      }
+      
+      metadata = { difficulty };
+      
+      // Mock API call to create challenge
+      const resultElement = document.getElementById('create-result');
+      resultElement.innerHTML = '<div class="alert alert-warning">Creating challenge...</div>';
+      
+      // In a real implementation, this would be an actual API call
+      setTimeout(() => {
+        resultElement.innerHTML = '<div class="alert alert-success">Challenge created successfully!</div>';
+        
+        // Reset form
+        document.getElementById('challenge-type').value = '';
+        showChallengeForm();
+        document.getElementById('challenge-difficulty').value = 'medium';
+        
+        // Reload challenges
+        loadChallenges();
+      }, 1000);
+    });
+    
+    // Load challenges
+    function loadChallenges() {
+      const challengeList = document.getElementById('challenge-list');
+      challengeList.innerHTML = '<p>Loading challenges...</p>';
+      
+      // In a real implementation, this would be an actual API call
+      setTimeout(() => {
+        const filterType = document.getElementById('filter-type').value;
+        
+        // Sample challenges
+        const challenges = [
+          {
+            id: 'c1',
+            type: 'text',
+            content: { text: 'AB123C', distortionLevel: 'medium' },
+            metadata: { difficulty: 'easy' },
+            isActive: true,
+            createdAt: '2025-02-15'
+          },
+          {
+            id: 'c2',
+            type: 'image_selection',
+            content: { 
+              category: 'Select all images containing cats',
+              images: [
+                'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=150',
+                'https://images.unsplash.com/photo-1573865526739-10659fec78a5?w=150',
+                'https://images.unsplash.com/photo-1495360010541-f48722b34f7d?w=150',
+                'https://images.unsplash.com/photo-1561948955-570b270e7c36?w=150'
+              ],
+              correctIndices: [0, 1, 2]
+            },
+            metadata: { difficulty: 'medium' },
+            isActive: true,
+            createdAt: '2025-02-20'
+          },
+          {
+            id: 'c3',
+            type: 'pattern',
+            content: { gridSize: 3, patternLength: 5, pattern: [0, 4, 8, 5, 2] },
+            metadata: { difficulty: 'hard' },
+            isActive: true,
+            createdAt: '2025-03-01'
+          },
+          {
+            id: 'c4',
+            type: 'semantic',
+            content: { 
+              question: 'Which of these is a color?',
+              options: ['Apple', 'Blue', 'Chair', 'Dog'],
+              correctIndex: 1
+            },
+            metadata: { difficulty: 'easy' },
+            isActive: true,
+            createdAt: '2025-03-05'
+          }
+        ];
+        
+        // Filter challenges
+        const filteredChallenges = filterType 
+          ? challenges.filter(c => c.type === filterType)
+          : challenges;
+        
+        if (filteredChallenges.length === 0) {
+          challengeList.innerHTML = '<div class="alert alert-warning">No challenges found with the selected filter.</div>';
+          return;
+        }
+        
+        // Render challenges
+        challengeList.innerHTML = filteredChallenges.map(challenge => {
+          const difficultyClass = `difficulty-${challenge.metadata?.difficulty || 'medium'}`;
+          
+          let previewHtml = '';
+          
+          // Generate preview based on challenge type
+          switch (challenge.type) {
+            case 'text':
+              previewHtml = `
+                <div class="preview-section">
+                  <strong>Preview:</strong>
+                  <div style="font-family: monospace; font-size: 24px; letter-spacing: 3px; margin-top: 10px;">
+                    ${challenge.content.text}
+                  </div>
+                  <div>Distortion: ${challenge.content.distortionLevel}</div>
+                </div>
+              `;
+              break;
+              
+            case 'image_selection':
+              previewHtml = `
+                <div class="preview-section">
+                  <strong>Category:</strong> ${challenge.content.category}
+                  <div class="image-grid" style="margin-top: 10px;">
+                    ${challenge.content.images.map((url, index) => `
+                      <div class="image-container ${challenge.content.correctIndices.includes(index) ? 'selected' : ''}">
+                        <img src="${url}" alt="Challenge image">
+                        ${challenge.content.correctIndices.includes(index) ? '<div class="overlay">✓</div>' : ''}
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              `;
+              break;
+              
+            case 'pattern':
+              previewHtml = `
+                <div class="preview-section">
+                  <strong>Pattern:</strong> Grid size ${challenge.content.gridSize}×${challenge.content.gridSize}, 
+                  Length: ${challenge.content.patternLength}
+                </div>
+              `;
+              break;
+              
+            case 'semantic':
+              previewHtml = `
+                <div class="preview-section">
+                  <strong>Question:</strong> ${challenge.content.question}
+                  <ul style="margin-top: 10px;">
+                    ${challenge.content.options.map((option, index) => `
+                      <li style="${index === challenge.content.correctIndex ? 'font-weight: bold; color: #15803d;' : ''}">
+                        ${option} ${index === challenge.content.correctIndex ? '✓' : ''}
+                      </li>
+                    `).join('')}
+                  </ul>
+                </div>
+              `;
+              break;
+          }
+          
+          return `
+            <div class="challenge-item">
+              <div class="challenge-header">
+                <h3>
+                  ${getTypeName(challenge.type)}
+                  <span class="difficulty-tag ${difficultyClass}">
+                    ${challenge.metadata?.difficulty || 'medium'}
+                  </span>
+                </h3>
+                <span class="badge ${challenge.isActive ? 'badge-success' : 'badge-warning'}">
+                  ${challenge.isActive ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+              <div>Created: ${challenge.createdAt}</div>
+              
+              ${previewHtml}
+              
+              <div class="challenge-actions">
+                <button class="btn action-btn">Edit</button>
+                <button class="btn btn-secondary action-btn">${challenge.isActive ? 'Deactivate' : 'Activate'}</button>
+                <button class="btn btn-danger action-btn">Delete</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }, 1000);
+    }
+    
+    // Stats for dashboard
+    function loadStats() {
+      const statsContainer = document.getElementById('challenge-stats');
+      
+      // In a real implementation, this would be an actual API call
+      setTimeout(() => {
+        // Sample stats
+        const stats = {
+          totalChallenges: 8,
+          challengeTypes: {
+            text: 2,
+            image_selection: 3,
+            pattern: 2,
+            semantic: 1
+          },
+          activeChallenges: 7,
+          difficulties: {
+            easy: 2,
+            medium: 4,
+            hard: 2
+          }
+        };
+        
+        statsContainer.innerHTML = `
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+            <div class="card" style="margin: 0; padding: 15px;">
+              <h3 style="margin-top: 0;">Total Challenges</h3>
+              <p style="font-size: 24px; font-weight: bold; margin: 0;">${stats.totalChallenges}</p>
+            </div>
+            
+            <div class="card" style="margin: 0; padding: 15px;">
+              <h3 style="margin-top: 0;">Active Challenges</h3>
+              <p style="font-size: 24px; font-weight: bold; margin: 0;">${stats.activeChallenges}</p>
+            </div>
+          </div>
+          
+          <h3>Challenge Types</h3>
+          <ul style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; list-style: none; padding: 0;">
+            <li><strong>Text Recognition:</strong> ${stats.challengeTypes.text}</li>
+            <li><strong>Image Selection:</strong> ${stats.challengeTypes.image_selection}</li>
+            <li><strong>Pattern Memory:</strong> ${stats.challengeTypes.pattern}</li>
+            <li><strong>Semantic Understanding:</strong> ${stats.challengeTypes.semantic}</li>
+          </ul>
+          
+          <h3>Difficulty Distribution</h3>
+          <ul style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; list-style: none; padding: 0;">
+            <li>
+              <span class="difficulty-tag difficulty-easy">Easy</span>
+              ${stats.difficulties.easy}
+            </li>
+            <li>
+              <span class="difficulty-tag difficulty-medium">Medium</span>
+              ${stats.difficulties.medium}
+            </li>
+            <li>
+              <span class="difficulty-tag difficulty-hard">Hard</span>
+              ${stats.difficulties.hard}
+            </li>
+          </ul>
+        `;
+      }, 500);
+    }
+    
+    // Run maintenance action
+    document.getElementById('run-maintenance').addEventListener('click', () => {
+      const action = document.getElementById('maintenance-action').value;
+      if (!action) {
+        alert('Please select a maintenance action');
+        return;
+      }
+      
+      const resultElement = document.getElementById('maintenance-result');
+      resultElement.className = 'alert alert-warning';
+      resultElement.style.display = 'block';
+      resultElement.textContent = 'Running maintenance action...';
+      
+      // In a real implementation, this would be an actual API call
+      setTimeout(() => {
+        resultElement.className = 'alert alert-success';
+        resultElement.textContent = 'Maintenance completed successfully!';
+        
+        // Reload stats and challenges
+        loadStats();
+        loadChallenges();
+      }, 1500);
+    });
+    
+    // Helper function for type names
+    function getTypeName(type) {
+      const typeNames = {
+        'text': 'Text Recognition',
+        'image_selection': 'Image Selection',
+        'pattern': 'Pattern Memory',
+        'semantic': 'Semantic Understanding'
+      };
+      return typeNames[type] || type;
+    }
+    
+    // Initialize
+    document.getElementById('filter-type').addEventListener('change', loadChallenges);
+    loadStats();
+    loadChallenges();
+  </script>
+</body>
+</html>

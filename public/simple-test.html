@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CAPTCHA Test</title>
+  <!-- Load the script directly from your server -->
+  <script src="/cdn/captcha.js" async></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1 {
+      color: #333;
+    }
+    form {
+      margin-top: 20px;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    .captcha-container {
+      margin: 20px 0;
+      min-height: 100px;
+    }
+    button {
+      background-color: #4f46e5;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #result {
+      margin-top: 20px;
+      padding: 10px;
+      border-radius: 4px;
+      display: none;
+    }
+    .success {
+      background-color: #d1fae5;
+      border: 1px solid #34d399;
+    }
+    .error {
+      background-color: #fee2e2;
+      border: 1px solid #f87171;
+    }
+    .captcha-options {
+      margin-bottom: 15px;
+    }
+    select {
+      padding: 5px;
+      margin-right: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>CAPTCHA Test</h1>
+  
+  <div class="captcha-options">
+    <label for="captchaType">CAPTCHA Type:</label>
+    <select id="captchaType">
+      <option value="text">Text Recognition</option>
+      <option value="image">Image Selection</option>
+      <option value="pattern">Pattern Memory</option>
+    </select>
+    <button id="changeTypeBtn">Change Type</button>
+  </div>
+  
+  <form id="testForm">
+    <div id="captcha-container" class="captcha-container"></div>
+    <button type="submit">Submit</button>
+  </form>
+  
+  <div id="result"></div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Wait to make sure the CAPTCHA script is loaded
+      setTimeout(function() {
+        if (typeof iCaptcha === 'undefined') {
+          alert('Failed to load the CAPTCHA script. Please check your connection.');
+        } else {
+          // Initialize CAPTCHA
+          iCaptcha.init({
+            apiKey: 'captcha_client_1234567890abcdef'
+          });
+          
+          // Initial render
+          renderSelectedCaptcha();
+          
+          // Change CAPTCHA type button
+          document.getElementById('changeTypeBtn').addEventListener('click', function() {
+            renderSelectedCaptcha();
+          });
+        }
+      }, 1000);
+      
+      function renderSelectedCaptcha() {
+        const captchaType = document.getElementById('captchaType').value;
+        iCaptcha.render('captcha-container', {
+          challengeType: captchaType
+        });
+      }
+      
+      // Handle form submission
+      document.getElementById('testForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        
+        if (typeof iCaptcha === 'undefined') {
+          alert('CAPTCHA not loaded yet. Please wait a moment and try again.');
+          return;
+        }
+        
+        const captchaType = document.getElementById('captchaType').value;
+        
+        iCaptcha.verify({
+          challengeType: captchaType,
+          onSuccess: function(token) {
+            const resultEl = document.getElementById('result');
+            resultEl.className = 'success';
+            resultEl.style.display = 'block';
+            resultEl.innerHTML = '<strong>Success!</strong> CAPTCHA verified.';
+            console.log('CAPTCHA token:', token);
+          },
+          onFailure: function(error) {
+            const resultEl = document.getElementById('result');
+            resultEl.className = 'error';
+            resultEl.style.display = 'block';
+            resultEl.innerHTML = '<strong>Error!</strong> ' + error;
+            console.error('CAPTCHA error:', error);
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CAPTCHA Display Test</title>
+  <!-- Load the CAPTCHA script from your server -->
+  <script src="https://icaptcha.onrender.com/cdn/captcha.js" async></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1 {
+      color: #4f46e5;
+      margin-bottom: 20px;
+    }
+    .test-container {
+      background-color: #f9fafb;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+    .debug-container {
+      background-color: #f0f9ff;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .captcha-type-btn {
+      background-color: #e5e7eb;
+      color: #374151;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .captcha-type-btn.active {
+      background-color: #4f46e5;
+      color: white;
+    }
+    .difficulty-select {
+      padding: 8px;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+    }
+    .captcha-container {
+      margin: 20px 0;
+      min-height: 200px;
+      border: 1px dashed #d1d5db;
+      padding: 10px;
+      border-radius: 8px;
+      background-color: white;
+    }
+    .action-btn {
+      background-color: #4f46e5;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+      margin-right: 10px;
+    }
+    .action-btn:hover {
+      background-color: #4338ca;
+    }
+    .debug-item {
+      margin-bottom: 8px;
+      padding: 8px;
+      background-color: #fff;
+      border-radius: 4px;
+      border-left: 3px solid #3b82f6;
+    }
+    .debug-error {
+      border-left: 3px solid #ef4444;
+    }
+    .debug-success {
+      border-left: 3px solid #10b981;
+    }
+    .debug-time {
+      color: #6b7280;
+      font-size: 0.8rem;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      margin-left: 10px;
+    }
+    .status-success {
+      background-color: #d1fae5;
+      color: #047857;
+    }
+    .status-error {
+      background-color: #fee2e2;
+      color: #b91c1c;
+    }
+    .status-neutral {
+      background-color: #e5e7eb;
+      color: #374151;
+    }
+  </style>
+</head>
+<body>
+  <h1>CAPTCHA Display Test</h1>
+  
+  <div class="test-container">
+    <h2>Test Controls</h2>
+    
+    <div class="controls">
+      <div>
+        <label for="difficulty">Difficulty:</label>
+        <select id="difficulty" class="difficulty-select">
+          <option value="easy">Easy</option>
+          <option value="medium" selected>Medium</option>
+          <option value="hard">Hard</option>
+        </select>
+      </div>
+      
+      <button type="button" id="textCaptchaBtn" class="captcha-type-btn">Text</button>
+      <button type="button" id="imageSelectionBtn" class="captcha-type-btn active">Image Selection</button>
+      <button type="button" id="patternCaptchaBtn" class="captcha-type-btn">Pattern</button>
+      <button type="button" id="semanticCaptchaBtn" class="captcha-type-btn">Semantic</button>
+    </div>
+    
+    <div>
+      <button id="loadCaptchaBtn" class="action-btn">Load CAPTCHA</button>
+      <button id="resetCaptchaBtn" class="action-btn">Reset</button>
+      <button id="checkScriptBtn" class="action-btn">Check Script Status</button>
+    </div>
+    
+    <div id="captcha-status"></div>
+    
+    <!-- CAPTCHA container -->
+    <div id="captcha-container" class="captcha-container"></div>
+  </div>
+  
+  <div class="debug-container">
+    <h2>Debug Log</h2>
+    <div id="debug-log"></div>
+  </div>
+  
+  <div class="test-container">
+    <h2>Troubleshooting Tips</h2>
+    <ul>
+      <li>If challenges don't display, check for database configuration issues</li>
+      <li>Ensure you have challenges of each type in your database</li>
+      <li>Check that difficulty levels match what's available in the database</li>
+      <li>Use the <strong>Check Script Status</strong> button to verify iCaptcha is loaded</li>
+      <li>If you see API requests succeeding but no display, inspect browser developer console for errors</li>
+    </ul>
+    
+    <h3>Add Challenges Through Dashboard</h3>
+    <p>Access the dashboard at <a href="https://icaptcha.onrender.com/challenge-content" target="_blank">https://icaptcha.onrender.com/challenge-content</a></p>
+    <p>For each challenge type, ensure:</p>
+    <ul>
+      <li>At least one challenge exists for each difficulty level</li>
+      <li>Image Selection challenges have valid image URLs and correctIndices</li>
+      <li>All challenges are marked as active</li>
+    </ul>
+    
+    <h3>Database Maintenance</h3>
+    <p>Run the maintenance script to automatically fix common database issues:</p>
+    <pre>npm run db:maintain</pre>
+  </div>
+  
+  <script>
+    // Debug logging function
+    function debugLog(message, type = 'info') {
+      const logElement = document.getElementById('debug-log');
+      const timestamp = new Date().toLocaleTimeString();
+      
+      const logItem = document.createElement('div');
+      logItem.className = `debug-item ${type === 'error' ? 'debug-error' : type === 'success' ? 'debug-success' : ''}`;
+      
+      const timeSpan = document.createElement('span');
+      timeSpan.className = 'debug-time';
+      timeSpan.textContent = `[${timestamp}] `;
+      
+      logItem.appendChild(timeSpan);
+      logItem.appendChild(document.createTextNode(message));
+      
+      logElement.prepend(logItem);
+    }
+    
+    // Update status display
+    function updateStatus(message, type = 'neutral') {
+      const statusElement = document.getElementById('captcha-status');
+      statusElement.innerHTML = message + ` <span class="status-badge status-${type}">${type}</span>`;
+    }
+    
+    // Original console.log/error for debugging
+    const originalConsoleLog = console.log;
+    const originalConsoleError = console.error;
+    
+    // Override console methods to capture in our debug log
+    console.log = function(...args) {
+      const message = args.map(arg => 
+        typeof arg === 'object' ? JSON.stringify(arg) : arg
+      ).join(' ');
+      
+      debugLog(message);
+      originalConsoleLog.apply(console, args);
+    };
+    
+    console.error = function(...args) {
+      const message = args.map(arg => 
+        typeof arg === 'object' ? JSON.stringify(arg) : arg
+      ).join(' ');
+      
+      debugLog(message, 'error');
+      originalConsoleError.apply(console, args);
+    };
+    
+    // Wait for the page to load
+    document.addEventListener('DOMContentLoaded', function() {
+      debugLog('Page loaded, waiting for CAPTCHA script...');
+      
+      // Check if the script is loaded after 2 seconds
+      setTimeout(checkScriptLoaded, 2000);
+      
+      // CAPTCHA type buttons
+      const captchaTypes = {
+        'textCaptchaBtn': 'text',
+        'imageSelectionBtn': 'image_selection',
+        'patternCaptchaBtn': 'pattern',
+        'semanticCaptchaBtn': 'semantic'
+      };
+      
+      let selectedType = 'image_selection';
+      
+      // Add event listeners to all type buttons
+      Object.keys(captchaTypes).forEach(buttonId => {
+        document.getElementById(buttonId).addEventListener('click', function() {
+          // Remove active class from all buttons
+          Object.keys(captchaTypes).forEach(id => {
+            document.getElementById(id).classList.remove('active');
+          });
+          
+          // Add active class to clicked button
+          this.classList.add('active');
+          
+          // Store selected type
+          selectedType = captchaTypes[buttonId];
+          debugLog(`Selected CAPTCHA type: ${selectedType}`);
+        });
+      });
+      
+      // Load CAPTCHA button
+      document.getElementById('loadCaptchaBtn').addEventListener('click', function() {
+        loadCaptcha();
+      });
+      
+      // Reset CAPTCHA button
+      document.getElementById('resetCaptchaBtn').addEventListener('click', function() {
+        document.getElementById('captcha-container').innerHTML = '';
+        updateStatus('CAPTCHA container reset');
+        debugLog('CAPTCHA container reset');
+      });
+      
+      // Check script status button
+      document.getElementById('checkScriptBtn').addEventListener('click', function() {
+        checkScriptLoaded();
+      });
+      
+      function checkScriptLoaded() {
+        if (typeof iCaptcha !== 'undefined') {
+          debugLog('iCaptcha script loaded successfully!', 'success');
+          updateStatus('iCaptcha script loaded', 'success');
+        } else {
+          debugLog('iCaptcha script not loaded!', 'error');
+          updateStatus('iCaptcha script not loaded', 'error');
+        }
+      }
+      
+      function loadCaptcha() {
+        if (typeof iCaptcha === 'undefined') {
+          debugLog('Cannot load CAPTCHA: Script not loaded!', 'error');
+          updateStatus('Script not loaded', 'error');
+          return;
+        }
+        
+        const difficulty = document.getElementById('difficulty').value;
+        
+        try {
+          debugLog(`Initializing iCaptcha with type: ${selectedType}, difficulty: ${difficulty}`);
+          
+          // Initialize with test API key
+          iCaptcha.init({
+            apiKey: 'captcha_client_1234567890abcdef'
+          });
+          
+          // Render the selected CAPTCHA
+          debugLog(`Rendering CAPTCHA in container...`);
+          
+          iCaptcha.render('captcha-container', {
+            challengeType: selectedType,
+            difficulty: difficulty
+          });
+          
+          updateStatus('CAPTCHA loaded', 'success');
+        } catch (err) {
+          debugLog(`Error loading CAPTCHA: ${err.message}`, 'error');
+          updateStatus('Error loading CAPTCHA', 'error');
+        }
+      }
+    });
+  </script>
+</body>
+</html>

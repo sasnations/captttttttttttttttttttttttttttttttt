@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iCaptcha Integration Example</title>
+  <!-- Load the CAPTCHA script from your server -->
+  <script src="https://icaptcha.onrender.com/cdn/captcha.js" async></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1 {
+      color: #4f46e5;
+      margin-bottom: 20px;
+    }
+    .form-container {
+      background-color: #f9fafb;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+    input[type="text"], 
+    input[type="email"] {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #4f46e5;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    button:hover {
+      background-color: #4338ca;
+    }
+    .captcha-container {
+      margin: 20px 0;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 4px;
+      display: none;
+    }
+    .success {
+      background-color: #d1fae5;
+      border: 1px solid #34d399;
+      color: #047857;
+    }
+    .error {
+      background-color: #fee2e2;
+      border: 1px solid #f87171;
+      color: #b91c1c;
+    }
+    .options-container {
+      margin-bottom: 15px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .difficulty-select {
+      padding: 6px;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      background-color: white;
+    }
+    .captcha-type-btn {
+      background-color: #e5e7eb;
+      color: #374151;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .captcha-type-btn.active {
+      background-color: #4f46e5;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <h1>iCaptcha Integration Example</h1>
+  
+  <div class="form-container">
+    <form id="demoForm">
+      <div class="form-group">
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name" required>
+      </div>
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required>
+      </div>
+      
+      <div class="options-container">
+        <label for="difficulty">Difficulty:</label>
+        <select id="difficulty" class="difficulty-select">
+          <option value="easy">Easy</option>
+          <option value="medium" selected>Medium</option>
+          <option value="hard">Hard</option>
+        </select>
+      </div>
+      
+      <div class="options-container">
+        <span>CAPTCHA Type:</span>
+        <button type="button" id="textCaptchaBtn" class="captcha-type-btn active">Text</button>
+        <button type="button" id="imageCaptchaBtn" class="captcha-type-btn">Image</button>
+        <button type="button" id="patternCaptchaBtn" class="captcha-type-btn">Pattern</button>
+        <button type="button" id="semanticCaptchaBtn" class="captcha-type-btn">Semantic</button>
+      </div>
+      
+      <!-- CAPTCHA container -->
+      <div id="captcha-container" class="captcha-container"></div>
+      
+      <button type="submit">Submit Form</button>
+    </form>
+    
+    <div id="result" class="result"></div>
+  </div>
+  
+  <div class="form-container">
+    <h2>Instructions</h2>
+    <p>This example demonstrates how to integrate iCaptcha into your forms:</p>
+    <ol>
+      <li>Include the CAPTCHA script in your page</li>
+      <li>Initialize with your API key</li>
+      <li>Create a container for the CAPTCHA</li>
+      <li>Handle verification in your form submission</li>
+    </ol>
+    <p><strong>Note:</strong> You can change the CAPTCHA type and difficulty using the controls above.</p>
+  </div>
+  
+  <script>
+    // Wait for the iCaptcha script to load
+    document.addEventListener('DOMContentLoaded', function() {
+      // Check if the script loaded properly
+      setTimeout(function() {
+        if (typeof iCaptcha === 'undefined') {
+          alert('Failed to load the CAPTCHA script. Please check your connection or server status.');
+        } else {
+          initializeCaptcha();
+        }
+      }, 1000);
+      
+      function initializeCaptcha() {
+        // Initialize with your API key
+        iCaptcha.init({
+          apiKey: 'captcha_client_1234567890abcdef'  // Replace with your actual API key
+        });
+        
+        // Render the default CAPTCHA (text)
+        renderSelectedCaptcha();
+        
+        // Handle CAPTCHA type selection
+        const captchaTypes = {
+          'textCaptchaBtn': 'text',
+          'imageCaptchaBtn': 'image_selection',
+          'patternCaptchaBtn': 'pattern',
+          'semanticCaptchaBtn': 'semantic'
+        };
+        
+        // Add event listeners to all type buttons
+        Object.keys(captchaTypes).forEach(buttonId => {
+          document.getElementById(buttonId).addEventListener('click', function() {
+            // Remove active class from all buttons
+            Object.keys(captchaTypes).forEach(id => {
+              document.getElementById(id).classList.remove('active');
+            });
+            
+            // Add active class to clicked button
+            this.classList.add('active');
+            
+            // Render the selected CAPTCHA type
+            renderSelectedCaptcha();
+          });
+        });
+        
+        // Difficulty selector change handler
+        document.getElementById('difficulty').addEventListener('change', function() {
+          renderSelectedCaptcha();
+        });
+        
+        // Function to get the currently selected CAPTCHA type
+        function getSelectedCaptchaType() {
+          for (const [buttonId, type] of Object.entries(captchaTypes)) {
+            if (document.getElementById(buttonId).classList.contains('active')) {
+              return type;
+            }
+          }
+          return 'text'; // Default
+        }
+        
+        // Function to render the selected CAPTCHA
+        function renderSelectedCaptcha() {
+          const type = getSelectedCaptchaType();
+          const difficulty = document.getElementById('difficulty').value;
+          
+          iCaptcha.render('captcha-container', {
+            challengeType: type,
+            difficulty: difficulty
+          });
+        }
+        
+        // Handle form submission
+        document.getElementById('demoForm').addEventListener('submit', function(event) {
+          event.preventDefault();
+          
+          const type = getSelectedCaptchaType();
+          const difficulty = document.getElementById('difficulty').value;
+          
+          iCaptcha.verify({
+            challengeType: type,
+            difficulty: difficulty,
+            onSuccess: function(token) {
+              // Show success message
+              const resultEl = document.getElementById('result');
+              resultEl.className = 'result success';
+              resultEl.style.display = 'block';
+              resultEl.innerHTML = '<strong>Success!</strong> CAPTCHA verification passed. Token: ' + token;
+              
+              // In a real implementation, you would send the token to your server
+              console.log('CAPTCHA token:', token);
+              
+              // You could submit the form here
+              // this.submit();
+            },
+            onFailure: function(error) {
+              // Show error message
+              const resultEl = document.getElementById('result');
+              resultEl.className = 'result error';
+              resultEl.style.display = 'block';
+              resultEl.innerHTML = '<strong>Error!</strong> ' + error;
+              console.error('CAPTCHA error:', error);
+            }
+          });
+        });
+      }
+    });
+  </script>
+</body>
+</html>
